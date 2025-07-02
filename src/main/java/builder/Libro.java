@@ -4,7 +4,7 @@ public class Libro {
 
     private String titolo;
     private String autore;
-    private String ISBN;
+    private String isbn;
     private Stato statoLettura; //per ora con un enum, forse dopo con state
     private String genere;
     private int valutazione;
@@ -12,13 +12,13 @@ public class Libro {
     //metodi getter
     public String getTitolo(){return this.titolo;}
     public String getAutore(){return this.autore;}
-    public String getISBN(){return this.ISBN;}
+    public String getIsbn(){return this.isbn;}
     public Stato getStatoLettura(){return this.statoLettura;}
     public String getGenere(){return this.genere;}
     public int getValutazione(){return this.valutazione;}
 
     public void setAutore(String autore) {this.autore = autore;}
-    public void setISBN(String ISBN) {this.ISBN = ISBN;}
+    public void setIsbn(String isbn) {this.isbn = isbn;}
     public void setTitolo(String titolo) {this.titolo = titolo;}
     public void setGenere(String genere) {this.genere = genere;}
 
@@ -35,16 +35,16 @@ public class Libro {
         //Parametri richiesti, obbligatori
         private final String titolo;
         private final String autore;
-        private final String ISBN;
+        private final String isbn;
         //Parametri opzionali
         private Stato statoLettura=Stato.DaLeggere;
         private int valutazione=0;
         private String genere="Default genere";
 
-        public Builder(String titolo, String autore, String ISBN) {
+        public Builder(String titolo, String autore, String isbn) {
             this.titolo = titolo;
             this.autore = autore;
-            this.ISBN = ISBN;
+            this.isbn = isbn;
         }
         //public Builder Titolo(String titolo) {this.titolo=titolo;return this;}
         //public Builder Autore(String autore) {this.autore=autore;return this;}
@@ -59,7 +59,7 @@ public class Libro {
     private Libro(Builder builder) {
         this.titolo = builder.titolo;
         this.autore = builder.autore;
-        this.ISBN = builder.ISBN;
+        this.isbn = builder.isbn;
         this.statoLettura = builder.statoLettura;
         this.valutazione = builder.valutazione;
         this.genere = builder.genere;
@@ -68,4 +68,17 @@ public class Libro {
     public static enum Stato{
         Letto, DaLeggere, InLettura
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Libro)) return false;
+        Libro libro = (Libro) o;
+        return isbn != null && isbn.equals(libro.isbn);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(isbn);
+    }
+
 }
