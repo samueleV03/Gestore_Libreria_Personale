@@ -2,7 +2,6 @@ package persistenza;
 
 import builder.Libro;
 
-import java.io.IOException;
 import java.util.List;
 
 public interface LibreriaPersistente {
