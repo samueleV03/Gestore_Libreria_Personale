@@ -1,4 +1,6 @@
 import builder.Libro;
+import decorator.FiltroDecorator;
+import filtri.Filtro;
 import persistenza.LibreriaPersistente;
 import strategy.OrdinaLibreria;
 import strategy.OrdinaPerTitolo;
@@ -9,6 +11,8 @@ public class LibreriaImpl implements Libreria {
 
     LibreriaPersistente persistente;
     OrdinaLibreria criterio;
+    Filtro filtro;
+    FiltroDecorator filtroDecorator;
 
     public LibreriaImpl(LibreriaPersistente persistente) {
         this.persistente = persistente;
@@ -39,8 +43,28 @@ public class LibreriaImpl implements Libreria {
     }
 
     @Override
-    public void aggiungiFiltro() {
-
+    public void setFiltro(Filtro filtro) {
+        this.filtro = filtro;
     }
+
+    @Override
+    public List<Libro> getLibriFiltrati() {
+        List<Libro> libri=persistente.ottieniLibri();
+        List<Libro> ret=filtro.filtra(libri);
+        return ret;
+    }
+
+    @Override
+    public void setFiltroDecorator(FiltroDecorator filtro) {
+        this.filtroDecorator =filtro;
+    }
+
+    @Override
+    public List<Libro> getLibriFiltratiDecorator() {
+        List<Libro> libri=persistente.ottieniLibri();
+        List<Libro> ret= filtroDecorator.filtra(libri);
+        return ret;
+    }
+
 
 }

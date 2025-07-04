@@ -1,4 +1,6 @@
 import builder.Libro;
+import decorator.FiltroDecorator;
+import filtri.Filtro;
 import strategy.OrdinaLibreria;
 
 import java.util.List;
@@ -11,5 +13,11 @@ public interface Libreria {
     void setCriterioOrdine(OrdinaLibreria criterio);
     List<Libro> getLibriOrdinati();
 
-    void aggiungiFiltro();
+
+
+    void setFiltro(Filtro filtro);
+    List<Libro> getLibriFiltrati();
+
+    void setFiltroDecorator(FiltroDecorator filtro);
+    List<Libro> getLibriFiltratiDecorator();
 }
