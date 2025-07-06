@@ -30,6 +30,8 @@ public class Libro {
             throw new IllegalArgumentException("Valutazione non valida");
     }
 
+    public void setStatoLettura(Stato statoLettura) {this.statoLettura = statoLettura;}
+
     //Gestisco il costruttore con Builder
     public static class Builder {
         //Parametri richiesti, obbligatori

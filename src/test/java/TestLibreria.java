@@ -11,11 +11,57 @@ import strategy.OrdinaPerAutore;
 import strategy.OrdinaPerTitolo;
 import strategy.OrdinaPerValutazione;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 //test per provare funzioni di libreria
 public class TestLibreria {
+    //test per provare funzioni base della libreria
+    @Nested
+    class TestComandiLibreria {
+        private Libreria libreria;
+
+        //prima di tutto
+        @BeforeEach
+        void setUp() {
+            PersistenzaImpl persistenza = PersistenzaImpl.INSTANCE;
+            persistenza.reset();
+            libreria = new LibreriaImpl(persistenza);
+            Libro libro1 = new Libro.Builder("Doppia Verità", "Michael Connelly", "002").Valutazione(3).build();
+            Libro libro2 = new Libro.Builder("L'Alchimista", "Paulo Coelho", "003").Valutazione(5).build();
+            Libro libro3 = new Libro.Builder("1984", "George Orwell", "001").Valutazione(4).build();
+            libreria.aggiungiLibro(libro1);
+            libreria.aggiungiLibro(libro2);
+            libreria.aggiungiLibro(libro3);
+        }
+
+        void cercaLibro(){
+            Libro l= libreria.cercaLibro("002");
+            assertEquals("1984", l.getTitolo());
+
+        }
+        void provaModifiche()
+        {
+            HashMap<String, String> modifiche=new HashMap<>();
+            modifiche.put("valutazione", "1");
+            Libro l= libreria.cercaLibro("002"); //vogliamo cambiare la valutazione di Doppia Verità
+            libreria.modificaLibro(l, modifiche);
+            assertEquals(1, libreria.cercaLibro("002").getValutazione());
+
+            modifiche.clear();
+            modifiche.put("titolo", "1984 edizione speciale");
+            Libro l2= libreria.cercaLibro("001");
+            libreria.modificaLibro(l2, modifiche);
+            assertEquals("1984 edizione speciale", libreria.cercaLibro("001").getTitolo());
+
+            modifiche.clear();
+            modifiche.put("stato", "DaLeggere");
+            Libro l3= libreria.cercaLibro("003");
+            libreria.modificaLibro(l3, modifiche);
+            assertEquals("DaLeggere", String.valueOf(libreria.cercaLibro("003").getStatoLettura()));
+        }
+    }
 //test per provare ordinamento di libreria
     @Nested
     class TestOrdinamento {

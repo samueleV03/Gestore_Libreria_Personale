@@ -13,4 +13,6 @@ public interface LibreriaPersistente {
     void salvaLibri(List<Libro> libri);
     //ottieni i libri che sono salvati
     List<Libro> ottieniLibri();
+
+    Libro trovaLibro(String isbn);
 }

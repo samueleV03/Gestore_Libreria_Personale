@@ -83,4 +83,15 @@ public enum PersistenzaImpl implements LibreriaPersistente{
         }
         return new ArrayList<>(); //nel caso ci siano problemi facciamo restituire lista vuota
     }
+
+    @Override
+    public Libro trovaLibro(String isbn){ //magari gestire con eccezione, vedere domani
+        Libro ret=null;
+        for (Libro libro : libriNellaLibreria) {
+            if (libro.getIsbn().equals(isbn)) {
+                return libro;
+            }
+        }
+        throw new LibroNonTrovatoException(isbn);
+    }
 }
