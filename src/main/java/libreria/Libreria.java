@@ -1,3 +1,4 @@
+package libreria;
 import builder.Libro;
 import decorator.FiltroDecorator;
 import filtri.Filtro;
@@ -8,7 +9,7 @@ import java.util.Map;
 
 public interface Libreria {
 
-    void aggiungiLibro(Libro libro);
+    boolean aggiungiLibro(Libro libro);
     void rimuoviLibro(Libro libro);
 
     //metodo per modificare libri già presenti, gli passiamo una mappa che conterrà come chiave il nome

@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface LibreriaPersistente {
     //salva un singolo libro
-    void salvaLibro(Libro libro);
+    boolean salvaLibro(Libro libro);
     //rimuovi un singoli libro
     void rimuoviLibro(Libro libro);
     //aggiungi più libri contemporaneamente

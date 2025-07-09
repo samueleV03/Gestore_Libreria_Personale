@@ -1,20 +1,25 @@
+package libreria;
 import builder.Libro;
 import decorator.FiltroDecorator;
 import decorator.FiltroVuoto;
 import filtri.Filtro;
+import observer.Observer;
+import observer.Subject;
 import persistenza.LibreriaPersistente;
 import strategy.OrdinaLibreria;
 import strategy.OrdinaPerTitolo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class LibreriaImpl implements Libreria {
+public class LibreriaImpl implements Libreria,Subject {
 
     LibreriaPersistente persistente;
     OrdinaLibreria criterio;
     Filtro filtro;
     FiltroDecorator filtroDecorator;
+    private List<Observer> osservatori;
 
 
     public LibreriaImpl(LibreriaPersistente persistente) {
@@ -22,16 +27,20 @@ public class LibreriaImpl implements Libreria {
         //di default il criterio è ordine per titolo
         this.criterio= new OrdinaPerTitolo();
         this.filtroDecorator=new FiltroVuoto(); //filtro vuoto non filtra
+        osservatori= new ArrayList<>();
     }
 
     @Override
-    public void aggiungiLibro(Libro libro) {
-        persistente.salvaLibro(libro);
+    public boolean aggiungiLibro(Libro libro) {
+        boolean aggiunto=persistente.salvaLibro(libro);
+        notifyObservers();
+        return aggiunto;
     }
 
     @Override
     public void rimuoviLibro(Libro libro) {
         persistente.rimuoviLibro(libro);
+        notifyObservers();
     }
 
     @Override
@@ -60,6 +69,7 @@ public class LibreriaImpl implements Libreria {
                 System.out.println("Stato non valido");
             }
         }
+        notifyObservers();
     }
 
     @Override
@@ -104,4 +114,26 @@ public class LibreriaImpl implements Libreria {
     }
 
 
+    //aggiungiamo i metodi dell'observer
+    @Override
+    public void attach(Observer o) {
+        osservatori.add(o);
+    }
+
+    @Override
+    public void detach(Observer o) {
+        osservatori.remove(o);
+    }
+
+    @Override
+    public void notifyObservers() {
+        ArrayList<Observer> copia=new ArrayList<>(osservatori);
+        for (Observer o : copia) {
+            try {
+                o.update();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
