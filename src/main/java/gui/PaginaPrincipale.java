@@ -1,10 +1,13 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.List;
 import builder.Libro;
 import libreria.LibreriaImpl;
+import mediator.AggiungiLibroMediator;
 import observer.Observer;
 import persistenza.LibreriaPersistente;
 import persistenza.PersistenzaImpl;
@@ -48,7 +51,7 @@ public class PaginaPrincipale implements Observer {
             frame.add(pannelloPrincipale);
             frame.setVisible(true);
 
-            //inizializzazione persistenza/libreria
+            //inizializzazione persistenza libreria
             LibreriaPersistente persistenza = PersistenzaImpl.INSTANCE;
             libreria = new LibreriaImpl(persistenza);
             caricaLibri();
@@ -106,15 +109,19 @@ public class PaginaPrincipale implements Observer {
 
                 JLabel titolo = new JLabel("<html><b>" + libro.getTitolo() + "</b></html>");
                 JLabel autore = new JLabel("Autore: " + libro.getAutore());
+                JLabel isbn = new JLabel("ISBN: " + libro.getIsbn());
                 JLabel genere = new JLabel("Genere: " + libro.getGenere());
                 JLabel valutazione = new JLabel("Valutazione: " + libro.getValutazione());
+                JLabel statoLettura = new JLabel("Stato: " + libro.getStatoLettura().name());
 
                 JPanel infoPanel = new JPanel(new GridLayout(0, 1));
                 infoPanel.setOpaque(false);
                 infoPanel.add(titolo);
                 infoPanel.add(autore);
+                infoPanel.add(isbn);
                 infoPanel.add(genere);
                 infoPanel.add(valutazione);
+                infoPanel.add(statoLettura);
 
                 card.add(infoPanel, BorderLayout.CENTER); //aggiungiamo il pannello del libro
                 pannelloLibri.add(card);
@@ -132,14 +139,43 @@ public class PaginaPrincipale implements Observer {
         SwingUtilities.invokeLater(this::caricaLibri);
     }
 
-    //metodo per aggiungere libro alla libreria
     private static void aggiungiLibro() {
         JTextField campoTitolo = new JTextField(20);
         JTextField campoAutore = new JTextField(20);
         JTextField campoIsbn = new JTextField(20);
         JTextField campoGenere = new JTextField(20);
         JTextField campoValutazione = new JTextField(5);
+        JComboBox<Libro.Stato> comboStato = new JComboBox<>(Libro.Stato.values());
+        JButton bottoneSalva = new JButton("Salva");
+        bottoneSalva.setEnabled(false); //inizialmente disabilitato poiché i campi sono vuoti
+        //mediator
+        AggiungiLibroMediator mediator = new AggiungiLibroMediator();
+        mediator.setTitolo(campoTitolo);
+        mediator.setAutore(campoAutore);
+        mediator.setIsbn(campoIsbn);
+        mediator.setSalva(bottoneSalva);
+        //Listener per ogni campo obbligatorio
+        DocumentListener listenerTitolo = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { mediator.widgetCambiato(campoTitolo); }
+            public void removeUpdate(DocumentEvent e) { mediator.widgetCambiato(campoTitolo); }
+            public void changedUpdate(DocumentEvent e) { mediator.widgetCambiato(campoTitolo); }
+        };
+        campoTitolo.getDocument().addDocumentListener(listenerTitolo);
 
+        DocumentListener listenerAutore = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { mediator.widgetCambiato(campoAutore); }
+            public void removeUpdate(DocumentEvent e) { mediator.widgetCambiato(campoAutore); }
+            public void changedUpdate(DocumentEvent e) { mediator.widgetCambiato(campoAutore); }
+        };
+        campoAutore.getDocument().addDocumentListener(listenerAutore);
+
+        DocumentListener listenerIsbn = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { mediator.widgetCambiato(campoIsbn); }
+            public void removeUpdate(DocumentEvent e) { mediator.widgetCambiato(campoIsbn); }
+            public void changedUpdate(DocumentEvent e) { mediator.widgetCambiato(campoIsbn); }
+        };
+        campoIsbn.getDocument().addDocumentListener(listenerIsbn);
+        //creiamo il pannello e aggiungiamo i vari campi
         JPanel pannello = new JPanel(new GridLayout(0, 1));
         pannello.add(new JLabel("Titolo:"));
         pannello.add(campoTitolo);
@@ -151,47 +187,56 @@ public class PaginaPrincipale implements Observer {
         pannello.add(campoGenere);
         pannello.add(new JLabel("Valutazione (1-5):"));
         pannello.add(campoValutazione);
+        pannello.add(new JLabel("Stato di lettura:"));
+        pannello.add(comboStato);
 
-        int result = JOptionPane.showConfirmDialog(null, pannello, "Aggiungi nuovo libro",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        pannello.add(bottoneSalva);
 
-        if (result == JOptionPane.OK_OPTION) {
+        JDialog dialog = new JDialog((Frame) null, "Aggiungi nuovo libro", true);
+        dialog.getContentPane().add(pannello);
+
+        bottoneSalva.addActionListener(e -> {
             String titolo = campoTitolo.getText().trim();
             String autore = campoAutore.getText().trim();
             String isbn = campoIsbn.getText().trim();
             String genere = campoGenere.getText().trim();
             String valutazioneText = campoValutazione.getText().trim();
-
-            if (titolo.isEmpty() || autore.isEmpty() || isbn.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "Titolo, Autore e ISBN sono obbligatori");
-                return;
-            }
+            Libro.Stato statoSelezionato = (Libro.Stato) comboStato.getSelectedItem();
 
             int valutazione = 0;
-            //controlli sulla valutazione
+            //la valutazione deve essere un numero se presente
             if (!valutazioneText.isEmpty()) {
                 try {
                     valutazione = Integer.parseInt(valutazioneText);
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(null, "Valutazione non valida");
-                    //se inseriamo una valutazione non valida viene preso 0
                 }
             }
-            //se i vari campi sono ok, creiamo il libro
-            Libro nuovoLibro = new Libro.Builder(titolo, autore, isbn).Genere(genere).Valutazione(valutazione).build();
 
-            boolean aggiunto = libreria.aggiungiLibro(nuovoLibro); //salviamo il libro e notifichiamo observer
-            //se un libro con stesso isbn è già presente non verrà aggiunto, mostriamo messaggio
+            Libro nuovoLibro = new Libro.Builder(titolo, autore, isbn)
+                    .Genere(genere)
+                    .Valutazione(valutazione)
+                    .Stato(statoSelezionato)
+                    .build();
+
+            boolean aggiunto = libreria.aggiungiLibro(nuovoLibro);
+            //non deve essere presente un libro con stesso isbn
             if (!aggiunto) {
                 JOptionPane.showMessageDialog(null,
                         "Un libro con ISBN \"" + isbn + "\" è già presente nella libreria.",
                         "Libro duplicato",
                         JOptionPane.WARNING_MESSAGE);
             }
-        }
-
-
+            dialog.dispose();
+        });
+        dialog.pack(); //adatta automaticamente finestra
+        dialog.setLocationRelativeTo(null); //metta la finestra al centro
+        dialog.setVisible(true);
     }
+
+
+
+
 }
 
 
