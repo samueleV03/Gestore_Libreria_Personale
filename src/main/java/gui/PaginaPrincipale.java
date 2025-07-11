@@ -4,19 +4,27 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import builder.Libro;
+import decorator.*;
 import libreria.LibreriaImpl;
 import mediator.AggiungiLibroMediator;
 import observer.Observer;
 import persistenza.LibreriaPersistente;
 import persistenza.PersistenzaImpl;
+import strategy.OrdinaPerAutore;
+import strategy.OrdinaPerTitolo;
+import strategy.OrdinaPerValutazione;
 
 
 public class PaginaPrincipale implements Observer {
     private static JPanel pannelloLibri;
     private static JTextField campoRicerca;
     private static LibreriaImpl libreria;
+
 
     public void mostra() {
         SwingUtilities.invokeLater(() -> {
@@ -30,12 +38,34 @@ public class PaginaPrincipale implements Observer {
             JPanel pannelloRicerca = new JPanel(new FlowLayout(FlowLayout.LEFT));
             campoRicerca = new JTextField(30);
             JButton bottoneCerca = new JButton("Cerca");
-
             pannelloRicerca.add(new JLabel("Cerca per titolo:"));
             pannelloRicerca.add(campoRicerca);
             pannelloRicerca.add(bottoneCerca);
 
-            bottoneCerca.addActionListener(e -> mostraLibriFiltrati());
+            JPanel pannelloBottoni = new JPanel();
+            pannelloBottoni.setLayout(new BoxLayout(pannelloBottoni, BoxLayout.Y_AXIS));
+            pannelloBottoni.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // margine
+            pannelloBottoni.setBackground(Color.LIGHT_GRAY);
+            //bottone per aggiungere i libri
+            JButton bottoneAggiungi = new JButton("Aggiungi libro");
+            //bottone per applicare i filtri
+            JButton bottoneApplicaFiltri = new JButton("Applica filtri");
+            //bottone per rimuovere i filtri e tornare alla visione non filtrata
+            JButton bottoneResetFiltri = new JButton("Mostra tutti");
+            //bottone per ordinare
+            JButton ordinaButton = new JButton("Ordina");
+
+            //faccio tutti i bottoni della stessa dimensioni
+            Dimension dimensioneBottoni = new Dimension(150, 30);
+            for (JButton btn : List.of(bottoneAggiungi, bottoneResetFiltri, ordinaButton, bottoneApplicaFiltri)) {
+                btn.setPreferredSize(dimensioneBottoni);
+                btn.setMaximumSize(dimensioneBottoni);
+                btn.setMinimumSize(dimensioneBottoni);
+                btn.setAlignmentX(Component.CENTER_ALIGNMENT); //per centrare nel pannello verticale
+                pannelloBottoni.add(btn);
+                pannelloBottoni.add(Box.createRigidArea(new Dimension(0, 10))); //spazio verticale
+            }
+
 
             //pannello per contenere i libri
             pannelloLibri = new JPanel();
@@ -45,7 +75,9 @@ public class PaginaPrincipale implements Observer {
             JScrollPane scrollPane = new JScrollPane(pannelloLibri);
             scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-            pannelloPrincipale.add(pannelloRicerca, BorderLayout.NORTH);
+            //aggiunta dei vari pannelli a quello principale
+            pannelloPrincipale.add(pannelloRicerca, BorderLayout.NORTH); //ricerca in alto
+            pannelloPrincipale.add(pannelloBottoni, BorderLayout.EAST);  //bottoni a destra
             pannelloPrincipale.add(scrollPane, BorderLayout.CENTER);
 
             frame.add(pannelloPrincipale);
@@ -60,10 +92,24 @@ public class PaginaPrincipale implements Observer {
             libreria.attach(this);
             caricaLibri();
 
-            //aggiunta libri
-            JButton bottoneAggiungi = new JButton("Aggiungi libro");
-            pannelloRicerca.add(bottoneAggiungi);
+            //listener per cerca
+            bottoneCerca.addActionListener(e -> mostraLibriFiltrati());
+
+            //listener per aggiunta
             bottoneAggiungi.addActionListener(e -> aggiungiLibro());
+
+            //listener per filtri
+            bottoneApplicaFiltri.addActionListener(e -> filtra());
+
+            //listener per azzerare
+            bottoneResetFiltri.addActionListener(e -> {
+                campoRicerca.setText("");       // svuota campo ricerca
+                aggiornaVistaLibri(libreria.getLibriOrdinati());  // mostra tutti i libri
+            });
+
+            //listener per ordinamento
+            ordinaButton.addActionListener(e -> mostraOpzioniOrdinamento(frame));
+
         });
     }
 
@@ -85,16 +131,18 @@ public class PaginaPrincipale implements Observer {
     private static void aggiornaVistaLibri(List<Libro> libri) {
         //ripuliamo
         pannelloLibri.removeAll();
-
         if (libri.isEmpty()) { //se nessun libro è presente
             JLabel nessunRisultato = new JLabel("Libro non presente");
-            nessunRisultato.setFont(new Font("Arial", Font.BOLD, 16));
-            nessunRisultato.setForeground(Color.RED);
+            nessunRisultato.setFont(new Font("Arial", Font.BOLD, 20));
+            nessunRisultato.setForeground(Color.BLACK);
             nessunRisultato.setAlignmentX(Component.CENTER_ALIGNMENT);
+            pannelloLibri.setPreferredSize(new Dimension(400, 100));
             pannelloLibri.setLayout(new BoxLayout(pannelloLibri, BoxLayout.Y_AXIS));
             pannelloLibri.add(Box.createVerticalGlue()); //centrare verticalmente
             pannelloLibri.add(nessunRisultato);
             pannelloLibri.add(Box.createVerticalGlue());
+            pannelloLibri.revalidate();
+            pannelloLibri.repaint();
         } else {
             //se abbiamo dei libri creiamo i jpanel per ogni libro
             pannelloLibri.setLayout(new BoxLayout(pannelloLibri, BoxLayout.Y_AXIS));
@@ -126,16 +174,47 @@ public class PaginaPrincipale implements Observer {
                 card.add(infoPanel, BorderLayout.CENTER); //aggiungiamo il pannello del libro
                 pannelloLibri.add(card);
                 pannelloLibri.add(Box.createVerticalStrut(10)); //spazio tra i pannelli
-            }
-        }
 
-        pannelloLibri.revalidate();
-        pannelloLibri.repaint();
+                //bottone per rimuovere libri
+                JButton bottoneRimuovi = new JButton("Rimuovi libro");
+                bottoneRimuovi.addActionListener(e -> {
+                    int conferma = JOptionPane.showConfirmDialog(null,
+                            "Sei sicuro di voler rimuovere \"" + libro.getTitolo() + "\"?",
+                            "Conferma rimozione",
+                            JOptionPane.YES_NO_OPTION);
+
+                    if (conferma == JOptionPane.YES_OPTION) {
+                        boolean rimosso = libreria.rimuoviLibro(libro);
+                        if (rimosso) {
+                            SwingUtilities.invokeLater(() -> aggiornaVistaLibri(libreria.getLibriOrdinati()));
+                        } else {
+                            JOptionPane.showMessageDialog(null,
+                                    "Errore nella rimozione del libro.",
+                                    "Errore",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                });
+                infoPanel.add(bottoneRimuovi);
+
+                //bottone per la modifica
+                JButton bottoneModifica = new JButton("Modifica libro");
+                bottoneModifica.addActionListener(e -> {
+                    // Chiama il metodo per mostrare la finestra di modifica
+                    modifica(libro);
+                });
+                infoPanel.add(bottoneModifica);
+            }
+
+            pannelloLibri.revalidate();
+            pannelloLibri.repaint();
+        }
     }
 
 
     @Override
     public void update() {
+        System.out.println("Update chiamato");
         SwingUtilities.invokeLater(this::caricaLibri);
     }
 
@@ -236,7 +315,156 @@ public class PaginaPrincipale implements Observer {
 
 
 
+    private static void filtra() {
+        JTextField filtroAutoreDialog = new JTextField(15);
+
+        String[] generi = {"Tutti", "Romanzo", "Saggio", "Fantasy", "Biografia", "Default genere"};
+        JComboBox<String> filtroGenereDialog = new JComboBox<>(generi);
+
+        JComboBox<Libro.Stato> filtroStatoDialog = new JComboBox<>(Libro.Stato.values());
+        filtroStatoDialog.insertItemAt(null, 0);
+        filtroStatoDialog.setSelectedIndex(0);
+
+        JSlider filtroValutazioneDialog = new JSlider(0, 5, 0);
+        filtroValutazioneDialog.setMajorTickSpacing(1);
+        filtroValutazioneDialog.setPaintTicks(true);
+        filtroValutazioneDialog.setPaintLabels(true);
+
+        JPanel pannelloDialog = new JPanel();
+        pannelloDialog.setLayout(new BoxLayout(pannelloDialog, BoxLayout.Y_AXIS));
+        pannelloDialog.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        pannelloDialog.add(new JLabel("Autore:"));
+        pannelloDialog.add(filtroAutoreDialog);
+
+        pannelloDialog.add(Box.createVerticalStrut(10));
+        pannelloDialog.add(new JLabel("Genere:"));
+        pannelloDialog.add(filtroGenereDialog);
+
+        pannelloDialog.add(Box.createVerticalStrut(10));
+        pannelloDialog.add(new JLabel("Stato:"));
+        pannelloDialog.add(filtroStatoDialog);
+
+        pannelloDialog.add(Box.createVerticalStrut(10));
+        pannelloDialog.add(new JLabel("Valutazione:"));
+        pannelloDialog.add(filtroValutazioneDialog);
+
+        JButton bottoneApplicaFiltriDialog = new JButton("Applica filtri");
+        pannelloDialog.add(Box.createVerticalStrut(15));
+        pannelloDialog.add(bottoneApplicaFiltriDialog);
+
+        JDialog dialog = new JDialog((Frame) null, "Filtra libri", true);
+        dialog.getContentPane().add(pannelloDialog);
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+
+        bottoneApplicaFiltriDialog.addActionListener(e -> {
+            String autoreFiltro = filtroAutoreDialog.getText().trim();
+            String genereFiltro = (String) filtroGenereDialog.getSelectedItem();
+            Libro.Stato statoFiltro = (Libro.Stato) filtroStatoDialog.getSelectedItem();
+            int valutazione = filtroValutazioneDialog.getValue();
+
+            FiltroDecorator filtro = new FiltroVuoto();
+
+            if (!autoreFiltro.isEmpty()) {
+                filtro = new FiltroAutoreDecorator(filtro, autoreFiltro);
+            }
+
+            if (genereFiltro != null && !genereFiltro.equals("Tutti")) {
+                filtro = new FiltroGenereDecorator(filtro, genereFiltro);
+            }
+
+            if (statoFiltro != null) {
+                filtro = new FiltroStatoDecorator(filtro, statoFiltro);
+            }
+
+            if (valutazione > 0) {
+                filtro = new FiltroValutazioneDecorator(filtro, valutazione);
+            }
+
+            List<Libro> tuttiLibri = libreria.getLibriOrdinati();
+            List<Libro> filtrati = filtro.filtra(tuttiLibri);
+
+            aggiornaVistaLibri(filtrati);
+
+            dialog.dispose();
+        });
+
+        dialog.setVisible(true);
+    }
+
+
+    private static void modifica(Libro libro) {
+        JPanel panel = new JPanel(new GridLayout(0, 2));
+
+        JTextField campoTitolo = new JTextField(libro.getTitolo());
+        JTextField campoAutore = new JTextField(libro.getAutore());
+        JTextField campoGenere = new JTextField(libro.getGenere());
+        JTextField campoValutazione = new JTextField(String.valueOf(libro.getValutazione()));
+        JComboBox<String> campoStato = new JComboBox<>(new String[] {
+                "DaLeggere", "InLettura", "Letto"
+        });
+        campoStato.setSelectedItem(libro.getStatoLettura().name());
+
+        panel.add(new JLabel("Titolo:"));
+        panel.add(campoTitolo);
+        panel.add(new JLabel("Autore:"));
+        panel.add(campoAutore);
+        panel.add(new JLabel("Genere:"));
+        panel.add(campoGenere);
+        panel.add(new JLabel("Valutazione (1-5):"));
+        panel.add(campoValutazione);
+        panel.add(new JLabel("Stato lettura:"));
+        panel.add(campoStato);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Modifica Libro",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            Map<String, String> modifiche = new HashMap<>();
+            modifiche.put("titolo", campoTitolo.getText());
+            modifiche.put("autore", campoAutore.getText());
+            modifiche.put("genere", campoGenere.getText());
+            modifiche.put("valutazione", campoValutazione.getText());
+            modifiche.put("stato", (String) campoStato.getSelectedItem());
+            libreria.modificaLibro(libro, modifiche);
+
+        }
+    }
+
+
+    private void mostraOpzioniOrdinamento(JFrame frame) {
+        String[] opzioni = {"Titolo", "Autore", "Valutazione"};
+
+        String scelta = (String) JOptionPane.showInputDialog(
+                frame,
+                "Scegli un criterio di ordinamento:",
+                "Ordinamento Libreria",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                opzioni,
+                opzioni[0]
+        );
+
+        if (scelta != null) {
+            if (scelta.equals("Titolo")) {
+                libreria.setCriterioOrdine(new OrdinaPerTitolo());
+            } else if (scelta.equals("Autore")) {
+                libreria.setCriterioOrdine(new OrdinaPerAutore());
+            } else if (scelta.equals("Valutazione")) {
+                libreria.setCriterioOrdine(new OrdinaPerValutazione());
+            }
+
+            aggiornaVistaLibri(libreria.getLibriOrdinati());
+        }
+    }
+
+
 
 }
+
+
+
+
 
 

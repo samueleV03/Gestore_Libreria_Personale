@@ -1,7 +1,6 @@
 package libreria;
 import builder.Libro;
 import decorator.FiltroDecorator;
-import filtri.Filtro;
 import strategy.OrdinaLibreria;
 
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.Map;
 public interface Libreria {
 
     boolean aggiungiLibro(Libro libro);
-    void rimuoviLibro(Libro libro);
+    boolean rimuoviLibro(Libro libro);
 
     //metodo per modificare libri già presenti, gli passiamo una mappa che conterrà come chiave il nome
     //del campo che vorremmo modificare, come valore il valore del campo
@@ -18,9 +17,6 @@ public interface Libreria {
 
     void setCriterioOrdine(OrdinaLibreria criterio);
     List<Libro> getLibriOrdinati();
-
-    void setFiltro(Filtro filtro);
-    List<Libro> getLibriFiltrati();
 
     void setFiltroDecorator(FiltroDecorator filtro);
     List<Libro> getLibriFiltratiDecorator();

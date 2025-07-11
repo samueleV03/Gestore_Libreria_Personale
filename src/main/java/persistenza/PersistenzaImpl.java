@@ -51,12 +51,14 @@ public enum PersistenzaImpl implements LibreriaPersistente{
     }
 
     @Override
-    public synchronized void rimuoviLibro(Libro libro){
+    public synchronized boolean rimuoviLibro(Libro libro){
         if (libriNellaLibreria.contains(libro)) {
             libriNellaLibreria.remove(libro);
             salvaLibri(libriNellaLibreria);
+            return true;
         } else {
             System.out.println("Il libro non è presente");
+            return false;
         }
 
     }
