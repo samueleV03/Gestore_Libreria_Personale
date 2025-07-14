@@ -41,7 +41,7 @@ public class PaginaPrincipale implements Observer {
             pannelloRicerca.add(new JLabel("Cerca per titolo:"));
             pannelloRicerca.add(campoRicerca);
             pannelloRicerca.add(bottoneCerca);
-
+            //pannello laterale in cui sono presenti i vari bottoni
             JPanel pannelloBottoni = new JPanel();
             pannelloBottoni.setLayout(new BoxLayout(pannelloBottoni, BoxLayout.Y_AXIS));
             pannelloBottoni.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // margine
@@ -55,7 +55,7 @@ public class PaginaPrincipale implements Observer {
             //bottone per ordinare
             JButton ordinaButton = new JButton("Ordina");
 
-            //faccio tutti i bottoni della stessa dimensioni
+            //bottoni tutti della stessa dimensione
             Dimension dimensioneBottoni = new Dimension(150, 30);
             for (JButton btn : List.of(bottoneAggiungi, bottoneResetFiltri, ordinaButton, bottoneApplicaFiltri)) {
                 btn.setPreferredSize(dimensioneBottoni);

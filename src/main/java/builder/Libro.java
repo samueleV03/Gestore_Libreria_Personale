@@ -5,7 +5,7 @@ public class Libro {
     private String titolo;
     private String autore;
     private String isbn;
-    private Stato statoLettura; //per ora con un enum, forse dopo con state
+    private Stato statoLettura;
     private String genere;
     private int valutazione;
 
@@ -16,7 +16,7 @@ public class Libro {
     public Stato getStatoLettura(){return this.statoLettura;}
     public String getGenere(){return this.genere;}
     public int getValutazione(){return this.valutazione;}
-
+    //setter
     public void setAutore(String autore) {this.autore = autore;}
     public void setIsbn(String isbn) {this.isbn = isbn;}
     public void setTitolo(String titolo) {this.titolo = titolo;}
@@ -48,9 +48,6 @@ public class Libro {
             this.autore = autore;
             this.isbn = isbn;
         }
-        //public Builder Titolo(String titolo) {this.titolo=titolo;return this;}
-        //public Builder Autore(String autore) {this.autore=autore;return this;}
-        //public Builder ISBN(String ISBN) {this.ISBN=ISBN;return this;}
         public Builder Stato(Stato stato){this.statoLettura=stato;return this;}
         public Builder Valutazione(int valutazione) {this.valutazione=valutazione;return this;}
         public Builder Genere(String genere) {this.genere=genere;return this;}

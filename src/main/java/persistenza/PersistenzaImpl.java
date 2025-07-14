@@ -23,6 +23,8 @@ public enum PersistenzaImpl implements LibreriaPersistente{
 
     PersistenzaImpl() {
         gson = new GsonBuilder().setPrettyPrinting().create();
+        //GsonBuilder serve per creare il Gson personalizzato, se ci va bene quello standard new Gson()
+        //setPrettyPrinting serve per attivare il formato leggibile su più righe, create serve per crearlo
         this.libriNellaLibreria = new ArrayList<>();
         try {this.libriNellaLibreria = ottieniLibri();}
         catch (Exception e) {this.libriNellaLibreria = new ArrayList<>();}
@@ -68,6 +70,8 @@ public enum PersistenzaImpl implements LibreriaPersistente{
         try (Writer writer = new FileWriter(FILE_PATH)) {
             gson.toJson(libri, writer);
             libriNellaLibreria = new ArrayList<>(libri); //aggiorniamo la lista dei libri disponibili
+            //questo approccio va bene perché il metodo viene usato solo in salva libro e rimuovi libro che ogni volta
+            //quando andranno a chiamare il metodo salvaLibri gli passeranno in input libriNellaLibreria
         } catch (IOException e) {
             System.out.println("Problema nel salvataggio");
         }
@@ -89,7 +93,7 @@ public enum PersistenzaImpl implements LibreriaPersistente{
     }
 
     @Override
-    public Libro trovaLibro(String isbn){ //magari gestire con eccezione, vedere domani
+    public Libro trovaLibro(String isbn){
         Libro ret=null;
         for (Libro libro : libriNellaLibreria) {
             if (libro.getIsbn().equals(isbn)) {
